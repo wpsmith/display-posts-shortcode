@@ -91,7 +91,7 @@ function be_display_posts_shortcode( $atts ) {
 	$shortcode_title     = sanitize_text_field( $atts['title'] );
 	$author              = sanitize_text_field( $atts['author'] );
 	$category            = sanitize_text_field( $atts['category'] );
-	$class               = array_map( 'sanitize_html_class', explode( ' ', $atts['class'] ) );
+	$class               = array_map( 'sanitize_html_class', explode( ',', $atts['class'] ) );
 	$date_format         = sanitize_text_field( $atts['date_format'] );
 	$exclude_current     = be_display_posts_bool( $atts['exclude_current'] );
 	$id                  = $atts['id']; // Sanitized later as an array of integers
@@ -193,8 +193,9 @@ function be_display_posts_shortcode( $atts ) {
 		$tax_term = explode( ', ', $tax_term );
 
 		// Validate operator
-		if ( !in_array( $tax_operator, array( 'IN', 'NOT IN', 'AND' ) ) )
+		if ( !in_array( $tax_operator, array( 'IN', 'NOT IN', 'AND' ) ) ) {
 			$tax_operator = 'IN';
+		}
 
 		$tax_args = array(
 			'tax_query' => array(
@@ -215,12 +216,12 @@ function be_display_posts_shortcode( $atts ) {
 			isset( $original_atts['tax_' . $count . '_term'] ) && !empty( $original_atts['tax_' . $count . '_term'] )
 		):
 
-			// Sanitize values
-			$more_tax_queries = true;
-		$taxonomy = sanitize_key( $original_atts['taxonomy_' . $count] );
-		$terms = explode( ', ', sanitize_text_field( $original_atts['tax_' . $count . '_term'] ) );
-		$tax_operator = isset( $original_atts['tax_' . $count . '_operator'] ) ? $original_atts['tax_' . $count . '_operator'] : 'IN';
-		$tax_operator = in_array( $tax_operator, array( 'IN', 'NOT IN', 'AND' ) ) ? $tax_operator : 'IN';
+		// Sanitize values
+		$more_tax_queries = true;
+		$taxonomy         = sanitize_key( $original_atts['taxonomy_' . $count] );
+		$terms            = explode( ', ', sanitize_text_field( $original_atts['tax_' . $count . '_term'] ) );
+		$tax_operator     = isset( $original_atts['tax_' . $count . '_operator'] ) ? $original_atts['tax_' . $count . '_operator'] : 'IN';
+		$tax_operator     = in_array( $tax_operator, array( 'IN', 'NOT IN', 'AND' ) ) ? $tax_operator : 'IN';
 
 		$tax_args['tax_query'][] = array(
 			'taxonomy' => $taxonomy,
@@ -235,9 +236,10 @@ function be_display_posts_shortcode( $atts ) {
 
 		if ( $more_tax_queries ):
 			$tax_relation = 'AND';
-		if ( isset( $original_atts['tax_relation'] ) && in_array( $original_atts['tax_relation'], array( 'AND', 'OR' ) ) )
-			$tax_relation = $original_atts['tax_relation'];
-		$args['tax_query']['relation'] = $tax_relation;
+			if ( isset( $original_atts['tax_relation'] ) && in_array( $original_atts['tax_relation'], array( 'AND', 'OR' ) ) ) {
+				$tax_relation = $original_atts['tax_relation'];
+			}
+			$args['tax_query']['relation'] = $tax_relation;
 		endif;
 
 		$args = array_merge( $args, $tax_args );
@@ -258,7 +260,6 @@ function be_display_posts_shortcode( $atts ) {
 		$wrapper = 'ul';
 	}
 	$inner_wrapper = 'div' == $wrapper ? 'div' : 'li';
-
 
 	$listing = new WP_Query( apply_filters( 'display_posts_shortcode_args', $args, $original_atts ) );
 	if ( ! $listing->have_posts() ) {
@@ -296,7 +297,6 @@ function be_display_posts_shortcode( $atts ) {
 			remove_filter( 'shortcode_atts_display-posts', 'be_display_posts_off', 10, 3 );
 		}
 
-		// $class  = array( 'listing-item', );
 		$class  = sanitize_html_class( apply_filters( 'display_posts_shortcode_post_class', $class, $post, $listing, $original_atts ) );
 		$output = '<' . $inner_wrapper . ' class="' . implode( ' ', $class ) . '">' . $image . $title . $date . $author . $excerpt . $content . '</' . $inner_wrapper . '>';
 
